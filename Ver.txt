@@ -1,0 +1,46 @@
+mini-dfs/
+│
+├── certificates/           # Certificados SSL/TLS para canales seguros (Tema 5.2)
+│   ├── generate_certs.sh   # Script automatizado para crear llaves y certificados
+│   ├── central.crt
+│   ├── central.key
+│   ├── datanode.crt
+│   └── datanode.key
+│
+├── central_node/           # Nodo Central / Tracker (Metadatos y Coordinación)
+│   ├── __init__.py
+│   ├── metadata_manager.py # Controla el mapa de archivos, bloques y logs WAL (Tema 4.5)
+│   ├── heartbeat_monitor.py# Monitorea la vida de los datanodes (Tema 4.1)
+│   └── server.py           # Servidor TCP multihilo con SSL (Tema 5.2 y 5.3)
+│
+├── data_node/              # Nodos de Almacenamiento de Bloques
+│   ├── __init__.py
+│   ├── storage_engine.py   # Lectura/escritura de bloques físicos en disco
+│   └── node_runner.py      # Envía heartbeats y levanta el servidor del nodo (Tema 4.1 y 4.3)
+│
+├── client/                 # Cliente CLI / API
+│   ├── __init__.py
+│   ├── auth.py             # Manejo de tokens/credenciales de acceso (Tema 5.3)
+│   ├── dfs_client.py       # Lógica para fragmentar archivos, reintentos y ACKs (Tema 4.3)
+│   └── main.py             # Interfaz de comandos para el usuario (upload / download / list)
+│
+├── storage_simulation/     # Carpetas locales que simulan discos duros independientes
+│   ├── node_5001/          # Bloques guardados por la instancia del puerto 5001
+│   ├── node_5002/          # Bloques guardados por la instancia del puerto 5002
+│   └── node_5003/          # Bloques guardados por la instancia del puerto 5003
+│
+├── utils/                  # Herramientas compartidas
+│   ├── __init__.py
+│   ├── config.py           # Constantes (Tamaño de bloque, timeouts, puertos)
+│   └── crypto_helpers.py   # Funciones para verificar hashes SHA-256 de los bloques
+│
+├── README.md               # Documentación de arquitectura y cómo arrancar el sistema
+└── requirements.txt        # Dependencias (si usas pyjwt para tokens, de lo contrario vacío)
+
+
+
+Archivos clave para arrancar (Fase 1)
+
+1. utils/config.py: Define aquí desde el primer día el tamaño de bloque (ej. 4 * 1024 * 1024 bytes), el intervalo de Heartbeat (ej. 3 segundos) y el factor de replicación (ej. 2 copias por bloque).
+2. certificates/generate_certs.sh: Un pequeño script usando openssl para generar certificados auto-firmados locales. Es vital para que el módulo ssl de Python funcione correctamente en las conexiones.
+3. central_node/metadata_manager.py: El corazón del control de fallas. Debe ser capaz de escribir cada cambio en un archivo de texto plano (wal.log) antes de confirmarlo en memoria.
